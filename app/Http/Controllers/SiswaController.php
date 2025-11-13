@@ -14,11 +14,11 @@ class SiswaController extends Controller
         $siswa = Siswa::all();
         
         $siswa->transform(function ($item) {
+            // Kembalikan URL foto
             if ($item->foto && Storage::exists('public/upload/' . $item->foto)) {
-                $fotoPath = storage_path('app/public/upload/' . $item->foto);
-                $item->foto_base64 = base64_encode(file_get_contents($fotoPath));
+                $item->foto_url = asset('storage/upload/' . $item->foto);
             } else {
-                $item->foto_base64 = null;
+                $item->foto_url = asset('storage/upload/default.jpg');
             }
             return $item;
         });
@@ -38,10 +38,12 @@ class SiswaController extends Controller
             ], 404);
         }
 
-        $fotoBase64 = null;
+        // Kembalikan URL foto
+        $fotoUrl = null;
         if ($siswa->foto && Storage::exists('public/upload/' . $siswa->foto)) {
-            $fotoPath = storage_path('app/public/upload/' . $siswa->foto);
-            $fotoBase64 = base64_encode(file_get_contents($fotoPath));
+            $fotoUrl = asset('storage/upload/' . $siswa->foto);
+        } else {
+            $fotoUrl = asset('storage/upload/default.jpg');
         }
 
         return response()->json([
@@ -49,8 +51,8 @@ class SiswaController extends Controller
             'namasiswa' => $siswa->namasiswa,
             'jk' => $siswa->jk,
             'alamat' => $siswa->alamat,
-            'tgllahir' => $siswa->tanggallahir,
-            'foto' => $fotoBase64
+            'tanggallahir' => $siswa->tanggallahir,
+            'foto' => $fotoUrl
         ]);
     }
 
@@ -62,7 +64,7 @@ class SiswaController extends Controller
             'jk' => 'required|in:L,P',
             'alamat' => 'required',
             'tanggallahir' => 'required|date',
-            'foto' => 'required|string',
+            'foto' => 'required|string', // Masih terima base64 dari mobile
         ]);
 
         if ($validator->fails()) {
@@ -72,6 +74,7 @@ class SiswaController extends Controller
         }
 
         try {
+            // Decode base64 dan simpan ke storage
             $imageData = base64_decode($request->foto);
             $fileName = $request->nis . '_siswa.jpg';
             $filePath = 'public/upload/' . $fileName;
@@ -132,6 +135,12 @@ class SiswaController extends Controller
             ];
 
             if ($request->has('foto') && $request->foto) {
+                // Hapus foto lama jika ada
+                if ($siswa->foto && Storage::exists('public/upload/' . $siswa->foto)) {
+                    Storage::delete('public/upload/' . $siswa->foto);
+                }
+
+                // Simpan foto baru
                 $imageData = base64_decode($request->foto);
                 $fileName = $nis . '_siswa.jpg';
                 $filePath = 'public/upload/' . $fileName;
@@ -165,6 +174,7 @@ class SiswaController extends Controller
         }
 
         try {
+            // Hapus file foto dari storage
             if ($siswa->foto && Storage::exists('public/upload/' . $siswa->foto)) {
                 Storage::delete('public/upload/' . $siswa->foto);
             }
