@@ -9,9 +9,10 @@ class User extends Authenticatable
 {
     use HasFactory;
 
+    protected $table = 'user'; // PASTIKAN INI
     protected $primaryKey = 'iduser';
-    public $incrementing = false;
-    protected $keyType = 'string';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     protected $fillable = [
         'username',

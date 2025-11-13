@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
@@ -24,9 +23,11 @@ class AuthController extends Controller
             ], 422);
         }
 
+        // Cari user di tabel 'user' (bukan 'users')
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        // Gunakan MD5 seperti di file PHP native Anda
+        if (!$user || md5($request->password) !== $user->password) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Email atau password salah'
@@ -48,7 +49,7 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'username' => 'required',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'required|email|unique:user,email', // PASTIKAN 'user' bukan 'users'
             'password' => 'required|min:6',
         ]);
 
@@ -62,7 +63,7 @@ class AuthController extends Controller
         $user = User::create([
             'username' => $request->username,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'password' => md5($request->password), // Gunakan MD5
         ]);
 
         return response()->json([
